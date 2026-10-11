@@ -77,14 +77,22 @@ def upsert_cron_job(job: dict[str, Any]) -> None:
     schedule is a valid cron expression.
     """
     job.setdefault("enabled", True)
-    job.setdefault("created_at", datetime.now(timezone.utc).isoformat())
 
     schedule = job.get("schedule", "")
     if validate_cron_expression(schedule):
         job["next_run"] = next_run_time(schedule, tz=job.get("timezone") or job.get("tz")).isoformat()
 
     with exclusive_file_lock(_cron_lock_path()):
-        jobs = [existing for existing in load_cron_jobs() if existing.get("name") != job.get("name")]
+        existing_jobs = load_cron_jobs()
+        previous = next(
+            (existing for existing in existing_jobs if existing.get("name") == job.get("name")),
+            None,
+        )
+        job.setdefault(
+            "created_at",
+            (previous or {}).get("created_at") or datetime.now(timezone.utc).isoformat(),
+        )
+        jobs = [existing for existing in existing_jobs if existing.get("name") != job.get("name")]
         jobs.append(job)
         jobs.sort(key=lambda item: str(item.get("name", "")))
         save_cron_jobs(jobs)

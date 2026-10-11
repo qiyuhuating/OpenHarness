@@ -95,6 +95,18 @@ class TestCRUD:
         assert len(jobs) == 1
         assert jobs[0]["command"] == "echo 2"
 
+    def test_upsert_preserves_original_created_at(self) -> None:
+        upsert_cron_job({
+            "name": "stable-job",
+            "schedule": "* * * * *",
+            "created_at": "2024-01-01T00:00:00+00:00",
+        })
+        upsert_cron_job({"name": "stable-job", "schedule": "0 * * * *"})
+
+        job = get_cron_job("stable-job")
+        assert job is not None
+        assert job["created_at"] == "2024-01-01T00:00:00+00:00"
+
     def test_delete(self) -> None:
         upsert_cron_job({"name": "j1", "schedule": "* * * * *", "command": "echo 1"})
         assert delete_cron_job("j1") is True
