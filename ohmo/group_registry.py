@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from openharness.utils.fs import atomic_write_text
 from ohmo.workspace import get_groups_dir
 
 
@@ -73,7 +74,7 @@ def save_managed_group_record(
     )
     path = group_record_path(workspace=workspace, channel=channel, chat_id=chat_id)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(asdict(record), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    atomic_write_text(path, json.dumps(asdict(record), ensure_ascii=False, indent=2) + "\n")
     return path
 
 
@@ -85,9 +86,11 @@ def load_managed_group_record(
 ) -> dict[str, Any] | None:
     """Load metadata for an ohmo-managed group if present."""
     path = group_record_path(workspace=workspace, channel=channel, chat_id=chat_id)
-    if not path.exists():
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
         return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    return record if isinstance(record, dict) else None
 
 
 def normalize_cwd(cwd: str | Path) -> str:
