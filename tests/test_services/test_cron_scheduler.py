@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-import json
 from pathlib import Path
 import subprocess
 import sys
@@ -52,7 +51,7 @@ class TestHistory:
     def test_corrupt_or_non_object_history_lines_are_ignored(self) -> None:
         append_history({"name": "valid", "status": "success"})
         with get_history_path().open("a", encoding="utf-8") as handle:
-            handle.write("[]\\nnull\\n{malformed\\n")
+            handle.write("[]\nnull\n{malformed\n")
 
         assert [entry["name"] for entry in load_history()] == ["valid"]
         assert load_history(limit=0) == []
