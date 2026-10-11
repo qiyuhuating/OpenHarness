@@ -118,6 +118,24 @@ def test_migrate_memory_backfills_schema(tmp_path: Path, monkeypatch):
     assert rerun.changed == 0
 
 
+def test_invalid_utf8_memory_file_does_not_interrupt_scan_or_migration(
+    tmp_path: Path, monkeypatch,
+):
+    monkeypatch.setenv("OPENHARNESS_DATA_DIR", str(tmp_path / "data"))
+    project = tmp_path / "repo"
+    project.mkdir()
+    healthy = add_memory_entry(project, "Healthy Note", "A valid note.")
+    corrupt = get_project_memory_dir(project) / "corrupt.md"
+    corrupt.write_bytes(b"\\xff\\xfe")
+
+    assert [item.path for item in scan_memory_files(project)] == [healthy]
+
+    summary = migrate_memory(project, apply=False)
+    assert summary.scanned == 2
+    assert summary.failed == 1
+    assert summary.failed_files == ("corrupt.md",)
+
+
 def test_usage_index_marks_recalled_memories_and_stale_candidates(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("OPENHARNESS_DATA_DIR", str(tmp_path / "data"))
     project_dir = tmp_path / "repo"
