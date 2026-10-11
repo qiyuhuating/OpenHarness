@@ -126,7 +126,7 @@ def test_invalid_utf8_memory_file_does_not_interrupt_scan_or_migration(
     project.mkdir()
     healthy = add_memory_entry(project, "Healthy Note", "A valid note.")
     corrupt = get_project_memory_dir(project) / "corrupt.md"
-    corrupt.write_bytes(b"\\xff\\xfe")
+    corrupt.write_bytes(b"\xff\xfe")
 
     assert [item.path for item in scan_memory_files(project)] == [healthy]
 
