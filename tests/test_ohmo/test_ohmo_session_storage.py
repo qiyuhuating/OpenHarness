@@ -28,6 +28,18 @@ def test_ohmo_session_backend_uses_workspace_sessions(tmp_path: Path):
     assert backend.load_by_id(tmp_path, "abc123") is not None
 
 
+def test_ohmo_session_backend_ignores_corrupt_snapshots(tmp_path: Path):
+    workspace = tmp_path / ".ohmo-home"
+    initialize_workspace(workspace)
+    backend = OhmoSessionBackend(workspace)
+    directory = get_session_dir(workspace)
+    (directory / "latest.json").write_text("{bad", encoding="utf-8")
+    (directory / "session-corrupt.json").write_text("[]", encoding="utf-8")
+
+    assert backend.load_latest(tmp_path) is None
+    assert backend.load_by_id(tmp_path, "corrupt") is None
+
+
 def test_ohmo_session_backend_loads_latest_for_session_key(tmp_path: Path):
     workspace = tmp_path / ".ohmo-home"
     initialize_workspace(workspace)
