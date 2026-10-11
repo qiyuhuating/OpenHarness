@@ -66,17 +66,23 @@ def append_history(entry: dict[str, Any]) -> None:
 
 def load_history(*, limit: int = 50, job_name: str | None = None) -> list[dict[str, Any]]:
     """Load the most recent execution history entries."""
+    if limit <= 0:
+        return []
     path = get_history_path()
-    if not path.exists():
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError):
         return []
     entries: list[dict[str, Any]] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in lines:
         line = line.strip()
         if not line:
             continue
         try:
             entry = json.loads(line)
         except json.JSONDecodeError:
+            continue
+        if not isinstance(entry, dict):
             continue
         if job_name and entry.get("name") != job_name:
             continue

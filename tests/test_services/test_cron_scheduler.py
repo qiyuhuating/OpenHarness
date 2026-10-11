@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -13,6 +14,7 @@ import pytest
 from openharness.services.cron_scheduler import (
     _jobs_due,
     append_history,
+    get_history_path,
     execute_job,
     load_history,
     start_daemon,
@@ -46,6 +48,14 @@ class TestHistory:
         entries = load_history()
         assert len(entries) == 2
         assert entries[0]["name"] == "j1"
+
+    def test_corrupt_or_non_object_history_lines_are_ignored(self) -> None:
+        append_history({"name": "valid", "status": "success"})
+        with get_history_path().open("a", encoding="utf-8") as handle:
+            handle.write("[]\\nnull\\n{malformed\\n")
+
+        assert [entry["name"] for entry in load_history()] == ["valid"]
+        assert load_history(limit=0) == []
 
     def test_filter_by_name(self) -> None:
         append_history({"name": "j1", "status": "success"})
