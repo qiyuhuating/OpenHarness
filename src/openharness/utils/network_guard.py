@@ -49,7 +49,12 @@ class NetworkGuardError(ValueError):
 
 def validate_http_url(url: str) -> None:
     """Validate basic HTTP/HTTPS URL syntax."""
-    parsed = urlparse(url)
+    try:
+        parsed = urlparse(url)
+        # Accessing .port validates its syntax and allowed range.
+        _ = parsed.port
+    except ValueError as exc:
+        raise NetworkGuardError(f"invalid HTTP URL: {exc}") from exc
     if parsed.scheme not in {"http", "https"}:
         raise NetworkGuardError("only http and https URLs are allowed")
     if not parsed.netloc or not parsed.hostname:
