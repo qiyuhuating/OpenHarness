@@ -27,7 +27,7 @@ def _chunk_text(text: str, *, max_chars: int = 1800) -> list[str]:
 
     chunks: list[str] = []
     while len(remaining) > max_chars:
-        split_at = remaining.rfind("\n", 1, max_chars + 1)
+        split_at = remaining.rfind("\n", 1, max_chars)
         if split_at < max_chars // 2:
             split_at = max_chars
         else:
